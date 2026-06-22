@@ -32,7 +32,7 @@
 
 ## 🛠️ 开发
 
-前置：[Rust](https://rustup.rs)、[Node.js](https://nodejs.org)、WebView2（Win11 自带）。
+前置：[Rust](https://rustup.rs)、[Node.js](https://nodejs.org)。
 
 ```bash
 npm install
@@ -40,10 +40,38 @@ npm run tauri dev      # 开发运行
 npm run tauri build    # 构建发布版（产物在 src-tauri/target/release/bundle/）
 ```
 
+### Windows
+WebView2（Win11 自带）。产物：`.msi` / `.exe(NSIS)` 安装包。
+
+### Linux（在 Linux 或 WSL2 上构建）
+Tauri 的 Linux GUI 依赖 webkit2gtk 等原生库，无法从 Windows 交叉编译，需在 Linux 上构建。
+Fedora 依赖：
+```bash
+sudo dnf install -y gcc gcc-c++ make git webkit2gtk4.1-devel gtk3-devel \
+    libsoup3-devel librsvg2-devel openssl-devel nodejs npm rpm-build dpkg
+# 安装 Rust：https://rustup.rs
+npm install && npm run tauri build
+```
+产物（`src-tauri/target/release/bundle/`）：`.deb` / `.rpm` / `.AppImage`。
+Linux 上 ffmpeg/aria2 走系统包管理器；yt-dlp/deno 由应用按需自动下载。
+
+### Docker（容器化运行，GUI 需宿主 X11/Wayland 转发）
+```bash
+docker build -f Dockerfile -t ytdlp_gui_mhyho <含 .rpm 的目录>
+xhost +local:docker
+docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v "$HOME/Downloads:/root/Downloads" ytdlp_gui_mhyho
+```
+
 ## 📦 发布产物
 
-`npm run tauri build` 生成的安装包/可执行文件位于：
-`src-tauri/target/release/bundle/`（与源码分离）。
+| 平台 | 产物 |
+|---|---|
+| Windows | `.msi`、`.exe`(NSIS 安装程序) |
+| Linux | `.deb`、`.rpm`、`.AppImage` |
+| 容器 | Docker 镜像（见上） |
+
+均位于 `src-tauri/target/release/bundle/`，与源码分离。
 
 ## 📄 许可
 
