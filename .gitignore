@@ -1,0 +1,18 @@
+# 依赖与构建产物
+node_modules
+dist
+dist-ssr
+
+# Rust / Tauri 构建产物（源码与生成应用分离）
+src-tauri/target
+src-tauri/gen/schemas
+
+# 日志与缓存
+*.log
+.vite
+
+# 编辑器 / 系统
+.idea
+.DS_Store
+Thumbs.db
+*.local

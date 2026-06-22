@@ -1,0 +1,25 @@
+{
+  "name": "ytdlp-gui-mhyho",
+  "version": "1.0.0",
+  "description": "YTDLP_GUI_Mhyho — 基于 Tauri + Rust + SolidJS 的 yt-dlp 桌面下载器",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "tauri": "tauri"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "solid-js": "^1.9.3",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3",
+    "vite-plugin-solid": "^2.11.0",
+    "@tauri-apps/cli": "^2"
+  }
+}
