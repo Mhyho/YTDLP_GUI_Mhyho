@@ -37,8 +37,42 @@ pub fn which(exe: &str) -> Option<PathBuf> {
     }
     #[cfg(not(windows))]
     {
-        let _ = exe;
-        None
+        let out = std::process::Command::new("which").arg(exe).output().ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        let s = String::from_utf8_lossy(&out.stdout);
+        s.lines()
+            .next()
+            .map(|l| l.trim())
+            .filter(|l| !l.is_empty())
+            .map(PathBuf::from)
+    }
+}
+
+/// 可执行文件名：Windows 加 .exe，其它平台不加
+fn bin(name: &str) -> String {
+    if cfg!(windows) {
+        format!("{name}.exe")
+    } else {
+        name.to_string()
+    }
+}
+
+/// 给下载的二进制赋可执行权限（Unix 必需）
+fn make_executable(path: &std::path::Path) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if let Ok(meta) = std::fs::metadata(path) {
+            let mut perm = meta.permissions();
+            perm.set_mode(0o755);
+            let _ = std::fs::set_permissions(path, perm);
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = path;
     }
 }
 
@@ -129,7 +163,7 @@ pub fn uninstall_ytdlp(app: &AppHandle) -> Result<(), String> {
 /// 删除应用自带的 ffmpeg + ffprobe
 pub fn uninstall_ffmpeg(app: &AppHandle) -> Result<(), String> {
     let dir = tools_dir(app)?;
-    for n in ["ffmpeg.exe", "ffprobe.exe"] {
+    for n in [bin("ffmpeg"), bin("ffprobe")] {
         let p = dir.join(n);
         if p.exists() {
             std::fs::remove_file(&p).map_err(|e| e.to_string())?;
@@ -171,14 +205,16 @@ pub async fn ensure_deno(app: &AppHandle) -> Result<PathBuf, String> {
 
     let dir_clone = dir.clone();
     let zip_clone = zip_path.clone();
+    let deno_name = bin("deno");
     tokio::task::spawn_blocking(move || -> Result<(), String> {
         let f = std::fs::File::open(&zip_clone).map_err(|e| e.to_string())?;
         let mut archive = zip::ZipArchive::new(f).map_err(|e| e.to_string())?;
         for i in 0..archive.len() {
             let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
             let name = entry.name().replace('\\', "/");
-            if name.ends_with("deno.exe") {
-                let out = dir_clone.join("deno.exe");
+            let base = name.rsplit('/').next().unwrap_or("");
+            if base == "deno" || base == "deno.exe" {
+                let out = dir_clone.join(&deno_name);
                 let mut out_file = std::fs::File::create(&out).map_err(|e| e.to_string())?;
                 std::io::copy(&mut entry, &mut out_file).map_err(|e| e.to_string())?;
             }
@@ -191,8 +227,9 @@ pub async fn ensure_deno(app: &AppHandle) -> Result<PathBuf, String> {
     let _ = std::fs::remove_file(&zip_path);
     let exe = deno_path(app)?;
     if !exe.exists() {
-        return Err("解压后未找到 deno.exe".into());
+        return Err("解压后未找到 deno".into());
     }
+    make_executable(&exe);
     Ok(exe)
 }
 
@@ -201,7 +238,12 @@ pub async fn ensure_aria2c(app: &AppHandle) -> Result<PathBuf, String> {
     if let Some(p) = resolve_aria2c(app) {
         return Ok(p);
     }
-
+    #[cfg(not(windows))]
+    {
+        return Err("请用包管理器安装 aria2（如 sudo dnf install aria2）".into());
+    }
+    #[cfg(windows)]
+    {
     // 查询最新 release，找 win-64bit 的 zip 资源
     let client = reqwest::Client::builder()
         .user_agent("aerodl")
@@ -273,13 +315,24 @@ pub async fn ensure_aria2c(app: &AppHandle) -> Result<PathBuf, String> {
         return Err("解压后未找到 aria2c.exe".into());
     }
     Ok(exe)
+    }
 }
 
+#[cfg(windows)]
 const YTDLP_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
+#[cfg(not(windows))]
+const YTDLP_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux";
+
+#[cfg(windows)]
 const FFMPEG_ZIP_URL: &str =
     "https://github.com/yt-dlp/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip";
+
+#[cfg(windows)]
 const DENO_ZIP_URL: &str =
     "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip";
+#[cfg(not(windows))]
+const DENO_ZIP_URL: &str =
+    "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip";
 
 /// 下载进度事件载荷（发给前端）
 #[derive(Clone, Serialize)]
@@ -301,19 +354,19 @@ pub fn tools_dir(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 pub fn ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(tools_dir(app)?.join("yt-dlp.exe"))
+    Ok(tools_dir(app)?.join(bin("yt-dlp")))
 }
 
 pub fn ffmpeg_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(tools_dir(app)?.join("ffmpeg.exe"))
+    Ok(tools_dir(app)?.join(bin("ffmpeg")))
 }
 
 pub fn aria2c_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(tools_dir(app)?.join("aria2c.exe"))
+    Ok(tools_dir(app)?.join(bin("aria2c")))
 }
 
 pub fn deno_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(tools_dir(app)?.join("deno.exe"))
+    Ok(tools_dir(app)?.join(bin("deno")))
 }
 
 /// 流式下载到目标文件，按字节进度发 `tool-progress` 事件
@@ -368,6 +421,7 @@ pub async fn ensure_ytdlp(app: &AppHandle) -> Result<PathBuf, String> {
     }
     let path = ytdlp_path(app)?;
     download_with_progress(app, YTDLP_URL, &path, "yt-dlp", "下载 yt-dlp").await?;
+    make_executable(&path);
     Ok(path)
 }
 
@@ -375,6 +429,7 @@ pub async fn ensure_ytdlp(app: &AppHandle) -> Result<PathBuf, String> {
 pub async fn update_ytdlp(app: &AppHandle) -> Result<PathBuf, String> {
     let path = ytdlp_path(app)?;
     download_with_progress(app, YTDLP_URL, &path, "yt-dlp", "更新 yt-dlp").await?;
+    make_executable(&path);
     Ok(path)
 }
 
@@ -383,7 +438,12 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, String> {
     if let Some(p) = resolve_ffmpeg(app) {
         return Ok(p);
     }
-
+    #[cfg(not(windows))]
+    {
+        return Err("请用包管理器安装 ffmpeg（如 sudo dnf install ffmpeg）".into());
+    }
+    #[cfg(windows)]
+    {
     let ffmpeg = ffmpeg_path(app)?;
     let dir = tools_dir(app)?;
     let zip_path = dir.join("ffmpeg_tmp.zip");
@@ -428,4 +488,5 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, String> {
         return Err("解压后未找到 ffmpeg.exe".into());
     }
     Ok(ffmpeg)
+    }
 }

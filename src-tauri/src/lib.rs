@@ -259,12 +259,16 @@ fn default_download_dir(app: AppHandle) -> Result<String, String> {
 #[tauri::command]
 fn open_path(path: String) -> Result<(), String> {
     #[cfg(windows)]
-    {
-        std::process::Command::new("explorer")
-            .arg(&path)
-            .spawn()
-            .map_err(|e| e.to_string())?;
-    }
+    let program = "explorer";
+    #[cfg(target_os = "macos")]
+    let program = "open";
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let program = "xdg-open";
+
+    std::process::Command::new(program)
+        .arg(&path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
