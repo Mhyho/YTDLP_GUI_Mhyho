@@ -21,9 +21,9 @@ RUN dnf install -y \
         xdg-utils mesa-libGL \
     && dnf clean all
 
-# 安装应用
-COPY YTDLP_GUI_Mhyho-0.1.0-1.x86_64.rpm /tmp/app.rpm
-RUN dnf install -y /tmp/app.rpm && rm -f /tmp/app.rpm && dnf clean all
+# 安装应用（rpm 放在构建上下文）
+COPY *.rpm /tmp/
+RUN dnf install -y /tmp/*.rpm && rm -f /tmp/*.rpm && dnf clean all
 
 # 容器内软件渲染更稳
 ENV WEBKIT_DISABLE_COMPOSITING_MODE=1
