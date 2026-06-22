@@ -240,7 +240,7 @@ pub async fn ensure_aria2c(app: &AppHandle) -> Result<PathBuf, String> {
     }
     #[cfg(not(windows))]
     {
-        return Err("请用包管理器安装 aria2（如 sudo dnf install aria2）".into());
+        return Err("请用包管理器安装 aria2（macOS: brew install aria2；Linux: dnf/apt install aria2）".into());
     }
     #[cfg(windows)]
     {
@@ -320,7 +320,9 @@ pub async fn ensure_aria2c(app: &AppHandle) -> Result<PathBuf, String> {
 
 #[cfg(windows)]
 const YTDLP_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+const YTDLP_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos";
+#[cfg(all(unix, not(target_os = "macos")))]
 const YTDLP_URL: &str = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux";
 
 #[cfg(windows)]
@@ -330,7 +332,13 @@ const FFMPEG_ZIP_URL: &str =
 #[cfg(windows)]
 const DENO_ZIP_URL: &str =
     "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip";
-#[cfg(not(windows))]
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+const DENO_ZIP_URL: &str =
+    "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-apple-darwin.zip";
+#[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+const DENO_ZIP_URL: &str =
+    "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-apple-darwin.zip";
+#[cfg(all(unix, not(target_os = "macos")))]
 const DENO_ZIP_URL: &str =
     "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip";
 
@@ -440,7 +448,7 @@ pub async fn ensure_ffmpeg(app: &AppHandle) -> Result<PathBuf, String> {
     }
     #[cfg(not(windows))]
     {
-        return Err("请用包管理器安装 ffmpeg（如 sudo dnf install ffmpeg）".into());
+        return Err("请用包管理器安装 ffmpeg（macOS: brew install ffmpeg；Linux: dnf/apt install ffmpeg）".into());
     }
     #[cfg(windows)]
     {

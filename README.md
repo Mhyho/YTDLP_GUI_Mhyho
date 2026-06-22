@@ -55,6 +55,15 @@ npm install && npm run tauri build
 产物（`src-tauri/target/release/bundle/`）：`.deb` / `.rpm` / `.AppImage`。
 Linux 上 ffmpeg/aria2 走系统包管理器；yt-dlp/deno 由应用按需自动下载。
 
+### macOS（须在 Mac 上构建）
+macOS 应用只能在 macOS 上编译（需 Xcode 命令行工具），无法从 Windows/Linux 交叉编译。
+```bash
+xcode-select --install        # 安装命令行工具
+# 安装 Rust(https://rustup.rs) 与 Node.js(或 brew install node)
+npm install && npm run tauri build
+```
+产物：`.app` 与 `.dmg`（`src-tauri/target/release/bundle/`）。ffmpeg/aria2 用 `brew install ffmpeg aria2`；yt-dlp/deno 由应用按需自动下载（已适配 `yt-dlp_macos` 与 Apple Silicon/Intel 的 deno）。
+
 ### Docker（容器化运行，GUI 需宿主 X11/Wayland 转发）
 ```bash
 docker build -f Dockerfile -t ytdlp_gui_mhyho <含 .rpm 的目录>
@@ -69,6 +78,7 @@ docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
 |---|---|
 | Windows | `.msi`、`.exe`(NSIS 安装程序) |
 | Linux | `.deb`、`.rpm`、`.AppImage` |
+| macOS | `.dmg`、`.app`（须在 Mac 上构建） |
 | 容器 | Docker 镜像（见上） |
 
 均位于 `src-tauri/target/release/bundle/`，与源码分离。
