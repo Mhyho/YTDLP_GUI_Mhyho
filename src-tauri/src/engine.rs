@@ -327,6 +327,37 @@ pub async fn download(
 ) -> Result<String, String> {
     let cfg = settings::load(app);
     let dlopts: DownloadOptions = serde_json::from_str(options).unwrap_or_default();
+
+    let r = run_download(app, id, url, format, out_dir, &cfg, &dlopts).await;
+
+    // aria2c 在 YouTube/B 站等会因 URL 限流(403)失败(退出码 22)：自动回退原生下载器重试一次
+    if let Err(e) = &r {
+        if cfg.use_aria2c && (e.contains("aria2c") || e.contains("code 22")) {
+            let _ = app.emit(
+                "download-log",
+                DownloadLog {
+                    id: id.to_string(),
+                    line: "aria2c 下载失败，已回退到原生下载器重试…".into(),
+                },
+            );
+            let mut cfg2 = cfg.clone();
+            cfg2.use_aria2c = false;
+            return run_download(app, id, url, format, out_dir, &cfg2, &dlopts).await;
+        }
+    }
+    r
+}
+
+/// 实际执行一次下载：流式解析进度，通过事件推送给前端
+async fn run_download(
+    app: &AppHandle,
+    id: &str,
+    url: &str,
+    format: &str,
+    out_dir: &str,
+    cfg: &settings::Settings,
+    dlopts: &DownloadOptions,
+) -> Result<String, String> {
     let exe = tools::resolve_ytdlp(app).ok_or("yt-dlp 尚未安装")?;
     let ffmpeg = tools::resolve_ffmpeg(app);
 
@@ -353,10 +384,11 @@ pub async fn download(
         "download:AERODL|%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s",
     ]);
 
-    apply_cookies(&mut cmd, &cfg);
+    apply_cookies(&mut cmd, cfg);
 
     let mut using_aria2c = false;
-    if cfg.use_aria2c {
+    // YouTube 的 googlevideo URL 会限流/过期(403)，aria2c 无法重取 → 直接跳过用原生下载器
+    if cfg.use_aria2c && !is_youtube(url) {
         if let Some(a) = tools::resolve_aria2c(app) {
             using_aria2c = true;
             let conns = cfg.aria2c_connections.max(1);
@@ -372,7 +404,7 @@ pub async fn download(
 
     apply_js_runtime(&mut cmd, app);
 
-    for arg in build_option_args(&dlopts) {
+    for arg in build_option_args(dlopts) {
         cmd.arg(arg);
     }
 
@@ -487,7 +519,7 @@ pub async fn download(
                 DownloadLog { id: id.to_string(), line: "正在合成双语字幕…".into() },
             );
             if let Err(e) = crate::bisub::run(
-                app, url, &last_path, dlopts.bi_main.trim(), dlopts.bi_secondary.trim(), &cfg,
+                app, url, &last_path, dlopts.bi_main.trim(), dlopts.bi_secondary.trim(), cfg,
             )
             .await
             {
@@ -505,6 +537,11 @@ pub async fn download(
             errs.trim().to_string()
         })
     }
+}
+
+fn is_youtube(url: &str) -> bool {
+    let u = url.to_lowercase();
+    u.contains("youtube.com") || u.contains("youtu.be")
 }
 
 /// 把 cookies 设置加到命令上
