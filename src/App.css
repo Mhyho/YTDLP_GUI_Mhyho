@@ -9,6 +9,7 @@ body,
 
 /* ---- 主题变量：跟随系统 / Aero 明亮玻璃 ---- */
 [data-theme="dark"] {
+  color-scheme: dark;
   --text: #f3f3f3;
   --text-dim: rgba(255, 255, 255, 0.72);
   --title: #ffffff;
@@ -28,6 +29,7 @@ body,
 }
 
 [data-theme="light"] {
+  color-scheme: light;
   --text: #1b1d22;
   --text-dim: rgba(0, 0, 0, 0.62);
   --title: #14161a;

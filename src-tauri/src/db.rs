@@ -114,7 +114,7 @@ pub fn get(conn: &Connection, id: &str) -> Option<DownloadItem> {
 pub fn list(conn: &Connection) -> Result<Vec<DownloadItem>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id,url,title,format,out_dir,filepath,status,error,thumbnail,created_at
+            "SELECT id,url,title,format,out_dir,filepath,status,error,thumbnail,created_at,options
              FROM downloads ORDER BY created_at DESC",
         )
         .map_err(|e| e.to_string())?;
