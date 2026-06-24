@@ -83,7 +83,7 @@ function fmtBitrate(kbps: number | null): string {
 }
 
 function App() {
-  const [backdrop, setBackdrop] = createSignal<Backdrop>("mica");
+  const [backdrop, setBackdrop] = createSignal<Backdrop>("aero");
   const [sysDark, setSysDark] = createSignal(true);
 
   const [tools, setTools] = createSignal<ToolStatus>({
@@ -138,6 +138,7 @@ function App() {
   const [progress, setProgress] = createSignal<Record<string, Prog>>({});
 
   const t = tools;
+  // Aero 是浅色发亮玻璃，固定浅色文字方案；其余跟随系统明暗
   const effectiveTheme = () => (backdrop() === "aero" ? "light" : sysDark() ? "dark" : "light");
   createEffect(() => {
     document.documentElement.dataset.theme = effectiveTheme();

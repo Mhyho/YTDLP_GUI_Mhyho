@@ -89,6 +89,59 @@ body,
   display: none;
 }
 
+/* ===== Aero（Win7 风）：浅色发亮玻璃 + 玻璃反光 ===== */
+[data-backdrop="aero"] {
+  --text: #13233f;
+  --text-dim: rgba(20, 42, 74, 0.66);
+  --title: #0b1c3a;
+  --accent-bg: rgba(120, 180, 255, 0.55);
+  --accent-border: rgba(90, 150, 230, 0.85);
+  --card-border: rgba(255, 255, 255, 0.85);
+}
+/* 玻璃面板：上半亮反光 + 约中部一条光泽分界线 + 顶部纯白亮边 */
+[data-backdrop="aero"] .card {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.78) 0%,
+      rgba(255, 255, 255, 0.55) 45%,
+      rgba(255, 255, 255, 0.42) 50%,
+      rgba(222, 236, 255, 0.46) 51%,
+      rgba(205, 226, 252, 0.55) 100%
+    );
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-top-color: #ffffff;
+  border-radius: 8px;
+  box-shadow:
+    0 10px 28px rgba(15, 45, 90, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.4);
+}
+[data-backdrop="aero"] button,
+[data-backdrop="aero"] input,
+[data-backdrop="aero"] select {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.92), rgba(232, 242, 255, 0.78));
+  border-color: rgba(140, 175, 220, 0.55);
+  color: #13233f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+[data-backdrop="aero"] button:hover {
+  background: linear-gradient(to bottom, #ffffff, rgba(220, 235, 255, 0.9));
+  border-color: rgba(90, 150, 230, 0.7);
+}
+[data-backdrop="aero"] button.active,
+[data-backdrop="aero"] button.primary {
+  background: linear-gradient(to bottom, rgba(190, 222, 255, 0.95), rgba(120, 175, 245, 0.85));
+  border-color: rgba(80, 140, 225, 0.9);
+  color: #0b1c3a;
+}
+[data-backdrop="aero"] .opts,
+[data-backdrop="aero"] .result,
+[data-backdrop="aero"] .progress,
+[data-backdrop="aero"] .qbar-track {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 /* 顶部可拖拽标题栏 */
 .titlebar {
   height: 40px;

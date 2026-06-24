@@ -33,8 +33,9 @@ fn set_backdrop(window: tauri::WebviewWindow, kind: String) -> Result<(), String
                 let tint = if is_dark { (10, 12, 18, 95) } else { (250, 250, 252, 95) };
                 apply_acrylic(&window, Some(tint)).map_err(|e| e.to_string())?
             }
+            // Aero：浅色 Acrylic（Win11 上能真实模糊桌面、不闪烁），发亮通透的玻璃感
             "aero" => {
-                apply_acrylic(&window, Some((140, 190, 255, 100))).map_err(|e| e.to_string())?
+                apply_acrylic(&window, Some((224, 235, 252, 120))).map_err(|e| e.to_string())?
             }
             "none" => {}
             other => return Err(format!("未知的背景材质: {other}")),
